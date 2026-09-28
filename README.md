@@ -8,6 +8,16 @@ mới deploy `day12-agent` trên Railway. Token project nằm trong GitHub Actio
 Secret `RAILWAY_TOKEN`; không dùng khóa API của ứng dụng làm token deploy.
 CP5 và kiểm tra badge được chạy sau khi triển khai, không chạy vòng tròn trong CI.
 
+## UI Demo
+
+- Cloud: https://day12-agent-production-3776.up.railway.app/
+- Docker local: http://localhost:8000/
+- Kịch bản trình diễn: [DEMO.md](DEMO.md).
+
+UI cùng origin với FastAPI, gọi API thật và hiển thị Redis history, token, chi phí
+giả lập, HTTP status. API key nhập bằng trường password, không nhúng vào HTML và
+không lưu localStorage. Mock LLM giữ nguyên theo yêu cầu lab.
+
 Đưa một AI agent từ `localhost:8000` lên một địa chỉ công khai mà người khác
 gọi được, có bảo mật, có giới hạn chi phí, và không sập khi bạn deploy bản mới.
 
