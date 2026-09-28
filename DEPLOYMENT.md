@@ -10,17 +10,17 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Họ và tên | (điền họ tên) |
-| Mã học viên | (điền mã học viên) |
-| Repo | (điền link repo K4-L3A-DAY12-HoVaTen-MSSV-CloudServicesAndDeployment) |
+| Họ và tên | Hà Mạnh Tuấn |
+| Mã học viên | 2A202602982 |
+| Repo | https://github.com/tuanfptu/K4-L3A-DAY12-HaManhTuan-2A202602982-CloudServicesAndDeployment |
 
 ## Service
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
-| Platform | Railway / Render / Cloud Run — (điền platform bạn dùng) |
-| Ngày deploy | (điền ngày) |
+| Public URL | https://day12-agent-production-3776.up.railway.app |
+| Platform | Railway |
+| Ngày deploy | 2026-09-28 |
 
 ## Biến Môi Trường Đã Set Trên Cloud
 
@@ -30,7 +30,7 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 |------|--------|---------|
 | `PORT` | ✅ | platform tự gán |
 | `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | (điền: Redis add-on của platform / Upstash / ...) |
+| `REDIS_URL` | ✅ | Tham chiếu `${{day12-redis.REDIS_URL}}`, kết nối nội bộ tới service day12-redis có persistent volume |
 | `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
 | `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
 | `LOG_LEVEL` | ✅ | INFO |
@@ -73,7 +73,15 @@ done; echo
 Dán output của các lệnh trên vào đây:
 
 ```
-(điền output)
+GET /health: 200
+{"status":"ok","service":"day12-agent","version":"1.0.0"}
+GET /ready: 200
+{"status":"ready","redis":true}
+POST /ask không có API key: 401
+POST /ask có khóa cloud hợp lệ: 200, 200
+history_length của hai request cùng user: 0, 2
+15 request liên tiếp của một user mới:
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
 ```
 
 ## Ảnh Chụp Màn Hình
@@ -81,7 +89,24 @@ Dán output của các lệnh trên vào đây:
 Đặt ảnh trong thư mục `screenshots/`:
 
 - `screenshots/dashboard.png` — trang quản lý service trên platform
-- `screenshots/health.png` — kết quả gọi `/health` từ trình duyệt hoặc curl
+- `screenshots/network.png` — Railway Network Logs ghi nhận `/health`, `/ready`,
+  `/ask` với mã HTTP 200, 401 và 429 từ kiểm tra thật.
+- Kết quả HTTP thật được ghi ở trên. Trình duyệt automation báo
+  `net::ERR_BLOCKED_BY_CLIENT` khi mở `/health`; không tạo ảnh giả cho endpoint.
+
+## Lỗi Deploy Và Cách Sửa
+
+Railway Metal builder từ chối cache mount ở dòng cài dependency:
+
+```text
+dockerfile invalid: flag '--mount=type=cache,target=/root/.cache/pip' is missing an id argument at Line 31
+```
+
+Thêm ID thông thường vẫn không đủ vì Railway yêu cầu cacheKey prefix riêng.
+Bản cuối dùng `pip install --no-cache-dir --timeout 120 --retries 5` để Dockerfile
+chạy được trên cả local và Railway. Deployment sau đó Online và vượt kiểm tra HTTPS.
+Tham chiếu Redis ban đầu dùng `DATABASE_URL`, nhưng service Redis cấp `REDIS_URL`;
+đã sửa tham chiếu về tên biến thực tế của `day12-redis`.
 
 ---
 
@@ -97,5 +122,7 @@ Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng
 5. Ghi rõ lý do không deploy được vào phần dưới đây:
 
 ```
-(điền lý do nếu dùng phương án dự phòng, ngược lại xóa mục này)
+Không sử dụng phương án dự phòng: LOCAL_FALLBACK=false.
+Service triển khai cloud thật bằng credit trial hiện có; chưa nâng cấp gói trả phí.
+Theo dõi credit và thời hạn trial để URL còn hoạt động lúc chấm bài.
 ```
