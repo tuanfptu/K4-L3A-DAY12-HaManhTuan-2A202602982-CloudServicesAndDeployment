@@ -1,5 +1,13 @@
 # K4 — Level 3A, Ngày 12: Hạ Tầng Cloud & Deployment (240 phút)
 
+[![CI/CD](https://github.com/tuanfptu/K4-L3A-DAY12-HaManhTuan-2A202602982-CloudServicesAndDeployment/actions/workflows/ci.yml/badge.svg)](https://github.com/tuanfptu/K4-L3A-DAY12-HaManhTuan-2A202602982-CloudServicesAndDeployment/actions/workflows/ci.yml)
+
+Workflow `.github/workflows/ci.yml` chạy CP1-CP4 và build Docker trên runner Linux
+khi push hoặc mở pull request vào `main`. Chỉ push vào `main` và cả hai job xanh
+mới deploy `day12-agent` trên Railway. Token project nằm trong GitHub Actions
+Secret `RAILWAY_TOKEN`; không dùng khóa API của ứng dụng làm token deploy.
+CP5 và kiểm tra badge được chạy sau khi triển khai, không chạy vòng tròn trong CI.
+
 Đưa một AI agent từ `localhost:8000` lên một địa chỉ công khai mà người khác
 gọi được, có bảo mật, có giới hạn chi phí, và không sập khi bạn deploy bản mới.
 

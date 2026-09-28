@@ -1,0 +1,87 @@
+name: Lab CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Checkpoint tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AGENT_API_KEY: ci-dummy
+      REDIS_URL: fake://
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Run CP1-CP4 without cloud or circular badge checks
+        run: python -m pytest tests/ --ignore=tests/test_cp5.py --ignore=tests/test_bonus_cicd.py -m "not docker" -q
+
+  build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build production image
+        run: docker build --tag day12-agent:${{ github.sha }} .
+      - name: Check image size and non-root user
+        run: |
+          image="day12-agent:${{ github.sha }}"
+          bytes=$(docker image inspect "$image" --format '{{.Size}}')
+          test "$bytes" -lt 524288000
+          test "$(docker run --rm --entrypoint id "$image" -u)" -ne 0
+
+  deploy:
+    name: Deploy Railway
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://day12-agent-production-3776.up.railway.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Railway CLI
+        run: npm install --global @railway/cli@5.62.1
+      - name: Deploy the checked commit
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          test -n "$RAILWAY_TOKEN" || { echo "Missing RAILWAY_TOKEN secret"; exit 1; }
+          railway up --ci --service day12-agent --environment production
+      - name: Check public probes
+        env:
+          PUBLIC_URL: https://day12-agent-production-3776.up.railway.app
+        run: |
+          for endpoint in health ready; do
+            curl --fail --silent --show-error --retry 12 --retry-delay 5 \
+              --retry-all-errors --max-time 15 "$PUBLIC_URL/$endpoint"
+          done
