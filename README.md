@@ -276,6 +276,23 @@ Nộp **link repository** lên Codelab. Repo phải ở chế độ public.
 
 ## Danh Sách Kiểm Tra Trước Khi Nộp
 
+### Chạy Stack Local Trên PowerShell
+
+Mở Docker Desktop, đặt `AGENT_API_KEY` trong `.env`, sau đó chạy:
+
+```powershell
+docker compose up --build -d --wait
+docker compose ps
+Invoke-RestMethod http://localhost:8000/health
+Invoke-RestMethod http://localhost:8000/ready
+.\.venv\Scripts\python.exe -m pytest tests/test_cp1.py tests/test_cp2.py tests/test_cp3.py tests/test_cp4.py -q
+```
+
+API docs: http://localhost:8000/docs. Compose tự đặt `REDIS_URL` thành
+`redis://redis:6379/0`, không phụ thuộc giá trị Redis local trong `.env`.
+Xem log bằng `docker compose logs -f agent`; dừng stack bằng `docker compose down`.
+Lệnh down giữ volume Redis để lịch sử không mất khi khởi động lại.
+
 - [ ] Repo đúng tên `K4-L3A-DAY12-<HoVaTen>-<MSSV>-CloudServicesAndDeployment`
 - [ ] `pytest tests/ -v` — đã chạy và biết rõ test nào còn rớt, vì sao
 - [ ] `python grade.py` — xem điểm, mục tiêu ≥ 75/100
