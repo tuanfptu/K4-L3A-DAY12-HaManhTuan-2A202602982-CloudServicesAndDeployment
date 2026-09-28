@@ -28,7 +28,7 @@ WORKDIR /app
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.txt .
-RUN --mount=type=cache,id=day12-pip,target=/root/.cache/pip pip install --timeout 120 --retries 5 -r requirements.txt
+RUN pip install --no-cache-dir --timeout 120 --retries 5 -r requirements.txt
 
 FROM python:3.11-slim AS runtime
 WORKDIR /app
