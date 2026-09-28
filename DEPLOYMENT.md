@@ -106,6 +106,10 @@ GitHub Actions dùng CLI Railway 5.62.1 và project token giới hạn trong
 `production`, lưu tại repository secret `RAILWAY_TOKEN`.
 Sau build, workflow đợi đúng deployment mới đạt `SUCCESS` rồi gọi public probes.
 Badge và log chạy thật nằm trong README và tab Actions của repository.
+Minh chứng: [workflow #2 thành công](https://github.com/tuanfptu/K4-L3A-DAY12-HaManhTuan-2A202602982-CloudServicesAndDeployment/actions/runs/36401829168)
+với test 9 giây, build 25 giây, deploy 31 giây; ảnh tại `screenshots/cicd.png`.
+`python grade.py` ngày 2026-09-28: BONUS 13/13 test, +10/10; tổng cuối 100/100
+do trần điểm. Chất lượng phản ánh vẫn do giảng viên chấm thủ công.
 
 ### Khắc Phục Dockerfile
 
