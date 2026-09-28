@@ -17,17 +17,17 @@ concurrency:
 jobs:
   test:
     name: Checkpoint tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       AGENT_API_KEY: ci-dummy
       REDIS_URL: fake://
       PYTHONUTF8: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7.0.0
         with:
           python-version: '3.11'
           cache: pip
@@ -38,10 +38,10 @@ jobs:
 
   build:
     name: Docker build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Build production image
@@ -57,16 +57,16 @@ jobs:
     name: Deploy Railway
     needs: [test, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment:
       name: production
       url: https://day12-agent-production-3776.up.railway.app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: '22'
       - name: Install pinned Railway CLI
@@ -76,7 +76,20 @@ jobs:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
           test -n "$RAILWAY_TOKEN" || { echo "Missing RAILWAY_TOKEN secret"; exit 1; }
+          previous=$(railway deployment list --service day12-agent --environment production --json --limit 1 | jq -r '.[0].id // empty')
           railway up --ci --service day12-agent --environment production
+          deployment=$(railway deployment list --service day12-agent --environment production --json --limit 1 | jq -er '.[0].id')
+          test "$deployment" != "$previous" || { echo "No new deployment created"; exit 1; }
+          for attempt in $(seq 1 60); do
+            status=$(railway deployment list --service day12-agent --environment production --json --limit 10 | jq -er --arg id "$deployment" '.[] | select(.id == $id) | .status')
+            echo "Deployment $deployment: $status"
+            case "$status" in
+              SUCCESS) break ;;
+              FAILED|CRASHED|REMOVED|REMOVING) exit 1 ;;
+            esac
+            test "$attempt" -lt 60 || { echo "Deployment timed out"; exit 1; }
+            sleep 5
+          done
       - name: Check public probes
         env:
           PUBLIC_URL: https://day12-agent-production-3776.up.railway.app

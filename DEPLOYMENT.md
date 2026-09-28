@@ -96,6 +96,19 @@ history_length của hai request cùng user: 0, 2
 
 ## Lỗi Deploy Và Cách Sửa
 
+### BONUS: GitHub Actions
+
+Workflow `.github/workflows/ci.yml` gồm `test`, `build`, `deploy`.
+`deploy` phụ thuộc cả hai job đầu và chỉ chạy khi push vào `main`.
+Railway source repo đã được ngắt kết nối autodeploy để không có đường deploy
+song song bỏ qua test. Service, domain, Redis và volume được giữ nguyên.
+GitHub Actions dùng CLI Railway 5.62.1 và project token giới hạn trong
+`production`, lưu tại repository secret `RAILWAY_TOKEN`.
+Sau build, workflow đợi đúng deployment mới đạt `SUCCESS` rồi gọi public probes.
+Badge và log chạy thật nằm trong README và tab Actions của repository.
+
+### Khắc Phục Dockerfile
+
 Railway Metal builder từ chối cache mount ở dòng cài dependency:
 
 ```text
